@@ -10,6 +10,7 @@ try
         var row = new Row(line);
         Console.WriteLine(line);
         Console.WriteLine($"Possible {row.PossibleComboCount}");
+        Console.WriteLine( string.Join('\n', row.PossibleCombos));
         total += row.PossibleComboCount;
         line = sr.ReadLine();
     }

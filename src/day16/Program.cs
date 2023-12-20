@@ -25,6 +25,7 @@ try
     long Rows = input.Count;
     long Cols = input[0].Length;
     var Maze = new Node[Rows, Cols];
+
     for (int row = 0; row < Rows; row++)
     {
         for (int col = 0; col < Cols; col++)
@@ -33,15 +34,112 @@ try
         }
     }
 
-    Console.WriteLine(Maze[0, 0].NodeType);
+    long highScore = -1;
+
+
+    for (int row = 0; row < Rows; row++)
+    {
+        var score = TakeAWalk(row, 0, Direction.Left, Maze, Rows, Cols);
+        if (score > highScore) highScore = score;
+
+        score = TakeAWalk(row, Cols - 1, Direction.Right, Maze, Rows, Cols);
+        if (score > highScore) highScore = score;
+    }
+
+    for (int col = 0; col < Cols; col++)
+    {
+        var score = TakeAWalk(0, col, Direction.Up, Maze, Rows, Cols);
+        if (score > highScore) highScore = score;
+
+        score = TakeAWalk(Rows - 1, col, Direction.Down, Maze, Rows, Cols);
+        if (score > highScore) highScore = score;
+    }
+    Console.WriteLine(highScore);
+
+
+    // Console.WriteLine(Maze[0, 0].NodeType);
+    // //Enter the maze at 0,0 from the left
+    // var journey = Maze[0, 0].Traverse(Direction.Left);
+    // Console.WriteLine($"We took 1 step and have {journey.Count} paths to explore");
+    // journey.ForEach(x => Console.WriteLine($"Row: {x.Coord.Row} Col: {x.Coord.Col} EntryPoint: {x.EntryPoint}"));
+
+    // long prevTotal = -1;
+    // long cycle=0;
+    // long staleCycle=-1;
+    // while (journey.Count > 0)
+    // {
+    //     var valid = journey.Where(x => x.Coord.Row >= 0 && x.Coord.Row < Rows && x.Coord.Col >= 0 && x.Coord.Col < Cols).ToList();
+    //     // Console.WriteLine($"We have {valid.Count} paths to explore");
+    //     var nextSteps = new List<Tracer>();
+    //     foreach (var step in valid)
+    //     {
+    //         var nextStep = Maze[step.Coord.Row, step.Coord.Col].Traverse(step.EntryPoint);
+    //         // Console.WriteLine($"Maze[{step.Coord.Row},{step.Coord.Col}] {Maze[step.Coord.Row,step.Coord.Col].NodeType} = from {step.EntryPoint} led to {nextStep.Count()} paths to explore");
+    //         if (nextStep.Any()) nextSteps.AddRange(nextStep);
+    //     }
+    //     journey = nextSteps.Where(x => x.Coord.Row >= 0 && x.Coord.Row < Rows && x.Coord.Col >= 0 && x.Coord.Col < Cols).ToList();
+
+    //     cycle++;
+    //     if(cycle %25 == 0)
+    //     {
+    //         Console.WriteLine($"Cycle {cycle} complete");
+    //     }
+    //     long curTotal = 0;
+
+    //     for (int row = 0; row < Rows; row++)
+    //     {
+    //         for (int col = 0; col < Cols; col++)
+    //         {
+    //             if (Maze[row, col].VisitCount > 0) curTotal++;
+    //         }
+    //     }
+
+    //     if (curTotal == prevTotal && staleCycle == -1)
+    //     {
+    //         staleCycle = cycle;
+    //     };
+    //     if(staleCycle != -1 && cycle - staleCycle > 125) break;
+    //     if(staleCycle != -1 && curTotal != prevTotal) staleCycle = -1;
+    //     prevTotal = curTotal;
+    // }
+
+    // long total = 0;
+    // for (int row = 0; row < Rows; row++)
+    // {
+    //     for (int col = 0; col < Cols; col++)
+    //     {
+    //         if (Maze[row, col].VisitCount > 0)
+    //         {
+    //             total++;
+    //             Console.Write("#");
+    //         }
+    //         else
+    //         {
+    //             Console.Write('.');
+    //         }
+    //     }
+    //     Console.WriteLine();
+    // }
+    // Console.WriteLine(total);
+
+}
+catch (Exception e)
+{
+    Console.WriteLine("Exception: " + e);
+}
+
+
+long TakeAWalk(long startRow, long startCol, Direction direction, Node[,] Maze, long Rows, long Cols)
+{
+    Console.WriteLine($"Starting the walk from {startRow}, {startCol} coming from {direction}. Maze Size [{Rows},{Cols}]");
     //Enter the maze at 0,0 from the left
-    var journey = Maze[0, 0].Traverse(Direction.Left);
-    Console.WriteLine($"We took 1 step and have {journey.Count} paths to explore");
-    journey.ForEach(x => Console.WriteLine($"Row: {x.Coord.Row} Col: {x.Coord.Col} EntryPoint: {x.EntryPoint}"));
+    var journey = Maze[startRow, startCol].Traverse(direction);
+    // Console.WriteLine($"We took 1 step and have {journey.Count} paths to explore");
+    // journey.ForEach(x => Console.WriteLine($"Row: {x.Coord.Row} Col: {x.Coord.Col} EntryPoint: {x.EntryPoint}"));
 
     long prevTotal = -1;
-    long cycle=0;
-    long staleCycle=-1;
+    long cycle = 0;
+    long staleCycle = -1;
     while (journey.Count > 0)
     {
         var valid = journey.Where(x => x.Coord.Row >= 0 && x.Coord.Row < Rows && x.Coord.Col >= 0 && x.Coord.Col < Cols).ToList();
@@ -56,12 +154,12 @@ try
         journey = nextSteps.Where(x => x.Coord.Row >= 0 && x.Coord.Row < Rows && x.Coord.Col >= 0 && x.Coord.Col < Cols).ToList();
 
         cycle++;
-        if(cycle %25 == 0)
+        if (cycle % 25 == 0)
         {
-            Console.WriteLine($"Cycle {cycle} complete");
+            // Console.WriteLine($"Cycle {cycle} complete");
         }
         long curTotal = 0;
-        
+
         for (int row = 0; row < Rows; row++)
         {
             for (int col = 0; col < Cols; col++)
@@ -69,13 +167,13 @@ try
                 if (Maze[row, col].VisitCount > 0) curTotal++;
             }
         }
-        
+
         if (curTotal == prevTotal && staleCycle == -1)
         {
             staleCycle = cycle;
         };
-        if(staleCycle != -1 && cycle - staleCycle > 125) break;
-        if(staleCycle != -1 && curTotal != prevTotal) staleCycle = -1;
+        if (staleCycle != -1 && cycle - staleCycle > 125) break;
+        if (staleCycle != -1 && curTotal != prevTotal) staleCycle = -1;
         prevTotal = curTotal;
     }
 
@@ -87,19 +185,16 @@ try
             if (Maze[row, col].VisitCount > 0)
             {
                 total++;
-                Console.Write("#");
+                Maze[row,col].VisitCount = 0;
+                // Console.Write("#");
             }
             else
             {
-                Console.Write('.');
+                // Console.Write('.');
             }
         }
-        Console.WriteLine();
+        // Console.WriteLine();
     }
-    Console.WriteLine(total);
-
-}
-catch (Exception e)
-{
-    Console.WriteLine("Exception: " + e);
+    // Console.WriteLine(total);
+    return total;
 }

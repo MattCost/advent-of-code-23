@@ -1,6 +1,3 @@
-
-using System.Diagnostics;
-
 public enum Direction
 {
     None,
@@ -21,17 +18,24 @@ public class NodeLink
 }
 public class Node
 {
-    public Guid Id {get; init;} = Guid.NewGuid();
     public int Cost { get; set; }
-    public Node(int cost) { Cost = cost; }
-    public HashSet<NodeLink> Links { get; set; } = new();
+    public int Row {get;init;}
+    public int Col {get;init;}
+    public Node(int row, int col, int cost)
+    {
+        Row = row;
+        Col = col;
+        Cost = cost; 
+    }
+    public List<NodeLink> Links { get; set; } = new();
 
-    public HashSet<NodeLink> ValidLinks(Direction directionOfTravel, int stepCount)
+    public IEnumerable<NodeLink> ValidLinks(Direction directionOfTravel, int stepCount)
     {
         var baseOutput = Links.Where(link => link.Direction != Inverse(directionOfTravel));
+        
         return (stepCount < 3) ?
-            baseOutput.ToHashSet() :
-            baseOutput.Where(link => link.Direction != directionOfTravel).ToHashSet();
+            baseOutput : 
+            baseOutput.Where(link => link.Direction != directionOfTravel);
     }
     private Direction Inverse(Direction direction)
     {
@@ -53,11 +57,17 @@ public class Tracker
     public int StepCount { get; set; }
     public Direction DirectionOfTravel { get; set; }
     public long CumulativeScore { get; set; }
-    public Tracker(Node node, Direction directionOfTravel, int stepCount, long score)
+    public long EstimatedScore {get;set;}
+    public List<Node> PastNodes {get;set;}
+    public Tracker(Node node, Direction directionOfTravel, int stepCount, long score, List<Node> pastNodes)
     {
         Node = node;
         DirectionOfTravel = directionOfTravel;
         CumulativeScore = score;
+        EstimatedScore = CumulativeScore;
         StepCount = stepCount;
+
+        PastNodes = pastNodes;
+    
     }
 }

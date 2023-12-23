@@ -115,10 +115,10 @@ try
             }
             else
             {
-                if (openList.ContainsKey(successor) && openList[successor] < successorCost)
+                if (openList.ContainsKey(successor) && openList[successor] <= successorCost)
                     continue;
 
-                if (closedList.ContainsKey(successor) && closedList[successor] < successorCost)
+                if (closedList.ContainsKey(successor) && closedList[successor] <= successorCost)
                     continue;
 
                 queue.Enqueue(successor, successorCost);

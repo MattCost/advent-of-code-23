@@ -24,126 +24,104 @@ try
 
     int Rows = input.Count;
     int Cols = input.First().Length;
-    Node[,] Maze = new Node[Rows,Cols];
+    Node[,] LavaGrid = new Node[Rows, Cols];
 
     // Build up the nodes
-    for(int row=0; row<Rows ; row++)
+    for (int row = 0; row < Rows; row++)
     {
-        for(int col=0; col<Cols ; col++)
+        for (int col = 0; col < Cols; col++)
         {
-            var node = new Node( row, col, int.Parse($"{input[row][col]}"));
-            Maze[row,col] = node;
+            LavaGrid[row, col] = new Node(row, col, int.Parse($"{input[row][col]}"));
         }
     }
 
     // Link up the nodes
-    for(int row=0; row<Rows ; row++)
+    for (int row = 0; row < Rows; row++)
     {
-        for(int col=0; col<Cols ; col++)
+        for (int col = 0; col < Cols; col++)
         {
-
-            if(row > 0)
+            if (row > 0)
             {
-                Maze[row,col].Links.Add( new NodeLink(Maze[row-1,col], Direction.Up) );
+                LavaGrid[row, col].Links.Add(new Edge(LavaGrid[row - 1, col], Direction.Up));
             }
-            if(col > 0)
+            if (col > 0)
             {
-                Maze[row,col].Links.Add( new NodeLink(Maze[row, col-1], Direction.Left));
+                LavaGrid[row, col].Links.Add(new Edge(LavaGrid[row, col - 1], Direction.Left));
             }
-            if(row < Rows-1)
+            if (row < Rows - 1)
             {
-                Maze[row,col].Links.Add( new NodeLink(Maze[row+1,col], Direction.Down) );
+                LavaGrid[row, col].Links.Add(new Edge(LavaGrid[row + 1, col], Direction.Down));
             }
-            if(col < Cols - 1)
+            if (col < Cols - 1)
             {
-                Maze[row,col].Links.Add( new NodeLink(Maze[row, col+1], Direction.Right));
+                LavaGrid[row, col].Links.Add(new Edge(LavaGrid[row, col + 1], Direction.Right));
             }
         }
     }
 
     //Search time
-    // int stepCount = 0;
-    // long score = 0;
-    var workingList = new List<Tracker>
-    {
-        new Tracker(Maze[0, 0], Direction.None, 0, 0, new())
-    }; 
-    var closedList = new List<Tracker>();
-    List<Tracker> TheEnd = new();
+    var timer = System.Diagnostics.Stopwatch.StartNew();
+    var startingPoint = new DirectionalNode(LavaGrid[0, 0], Direction.None, 0);
 
-    while(workingList.Count>0)
-    {
-        Console.WriteLine($"WorkingList has {workingList.Count} entries left to process");
-        //Find the cheaper node
-        var min = workingList.Select( node => node.CumulativeScore).Min();
-        var workingStep = workingList.Where( node => node.CumulativeScore == min).First();
-        workingList.Remove(workingStep);
+    var queue = new PriorityQueue<DirectionalNode, long>();
 
-        //Generate successors
-        var successors = workingStep.Node.ValidLinks(workingStep.DirectionOfTravel, workingStep.StepCount).Select( nextNode => 
-            new Tracker(
-                nextNode.Node, 
-                nextNode.Direction, 
-                nextNode.Direction != workingStep.DirectionOfTravel ? 1 : workingStep.StepCount+1, 
-                workingStep.CumulativeScore + nextNode.Node.Cost,
-                new List<Node>(workingStep.PastNodes){ nextNode.Node}
-                ) ).ToList();
+    queue.Enqueue(startingPoint, 0);
+
+    var openList = new Dictionary<DirectionalNode, long>();
+
+    openList[startingPoint] = 0;
+
+    var closedList = new Dictionary<DirectionalNode, long>();
+
+    //Process the cheaper node
+    int cycle = 0;
+    while (queue.TryDequeue(out var workingStep, out var workingStepCost))
+    {
+        if(++cycle % 100 == 0) 
+            Console.WriteLine($"Cycle {cycle} Processing [{workingStep.Row},{workingStep.Col}] Dir{workingStep.Direction} Step{workingStep.StepCount} Score:{workingStepCost}");
         
+        openList.Remove(workingStep);
+
+        //Generate successors using links from the Lavagrid, but taking the current direction and step count into account
+        var successors =
+            LavaGrid[workingStep.Row, workingStep.Col].ValidLinks(workingStep.Direction, workingStep.StepCount)
+                .Select(nextNode =>
+                    new DirectionalNode(
+                        nextNode.Node,
+                        nextNode.Direction,
+                        nextNode.Direction != workingStep.Direction ? 1 : workingStep.StepCount + 1
+                    ));
+
         //Process successors
-        foreach(var successor in successors)
+        foreach (var successor in successors)
         {
-            if(successor.Node == Maze[Rows-1, Cols-1]) 
+            var successorCost = workingStepCost + LavaGrid[successor.Row, successor.Col].Cost;
+
+            if (successor.Row == Rows - 1 && successor.Col == Cols - 1)
             {
-                Console.WriteLine($"Found the goal with a score of {successor.CumulativeScore}");
-                PrintPath(successor, Rows,Cols);
+                timer.Stop();
+                Console.WriteLine($"Found the goal with a score of {successorCost} in {timer.ElapsedMilliseconds} msec");
                 Environment.Exit(0);
-                TheEnd.Add(successor);
             }
             else
             {
-                if(workingList.Where( n => n.Node == successor.Node && n.DirectionOfTravel == successor.DirectionOfTravel && n.StepCount == successor.StepCount && n.CumulativeScore < successor.CumulativeScore).Any())
+                if (openList.ContainsKey(successor) && openList[successor] < successorCost)
                     continue;
 
-                if(closedList.Where( n => n.Node == successor.Node && n.DirectionOfTravel == successor.DirectionOfTravel && n.StepCount == successor.StepCount && n.CumulativeScore < successor.CumulativeScore).Any())
+                if (closedList.ContainsKey(successor) && closedList[successor] < successorCost)
                     continue;
-                
-                workingList.Add(successor);
+
+                queue.Enqueue(successor, successorCost);
+                openList[successor] = successorCost;
             }
         }
+        closedList[workingStep] = workingStepCost;
+        // Console.WriteLine($"ClosedList has {closedList.Count} processed nodes. WorkingList has {queue.Count} nodes to process.");
+        
 
-        closedList.Add(workingStep);
     }
-
-    var bestScore = TheEnd.Select( x => x.CumulativeScore).Min();
-    var best = TheEnd.Where( x => x.CumulativeScore == bestScore);
-    Console.WriteLine($"Found {TheEnd.Count} total paths to the goal. {best.Count()} paths have the best score of {bestScore}.");
-    foreach(var bestPath  in best)
-    {
-        PrintPath(bestPath,Rows,Cols);
-    }
-
-
 }
 catch (Exception e)
 {
     Console.WriteLine("Exception: " + e);
-}
-
-void PrintPath(Tracker successor, int rows, int cols)
-{
-    var output = new List<StringBuilder>();
-    for(int row=0; row<rows ; row++)
-    {
-        var sb = new StringBuilder();
-        for(int col = 0 ; col<cols ; col++)
-            sb.Append('.');
-        output.Add(sb);
-    }
-
-    foreach(var node in successor.PastNodes)
-    {
-        // Console.WriteLine($"{node.Row},{node.Col}");
-        output[node.Row][node.Col]='#';
-    }
-    output.ForEach( x => Console.WriteLine(x.ToString()));
 }

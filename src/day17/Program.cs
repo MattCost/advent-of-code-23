@@ -7,7 +7,7 @@ List<string> input = new();
 
 try
 {
-    // StreamReader sr = new StreamReader("sample.txt");
+    // StreamReader sr = new StreamReader("sample2.txt");
     StreamReader sr = new StreamReader("input.txt");
 
     Console.WriteLine("starting processing");
@@ -61,15 +61,24 @@ try
 
     //Search time
     var timer = System.Diagnostics.Stopwatch.StartNew();
-    var startingPoint = new DirectionalNode(LavaGrid[0, 0], Direction.None, 0);
+    //Part 1 
+    // var startingPoint = new DirectionalNode(LavaGrid[0, 0], Direction.None, 0);
+
+    //Part 2
+    var firstMoveRight = new DirectionalNode(LavaGrid[0,1],Direction.Right,1);
+    var firstMoveDown = new DirectionalNode(LavaGrid[1,0], Direction.Down, 1);
 
     var queue = new PriorityQueue<DirectionalNode, long>();
 
-    queue.Enqueue(startingPoint, 0);
+    // queue.Enqueue(startingPoint, 0);
+    queue.Enqueue(firstMoveRight, LavaGrid[0,1].Cost);
+    queue.Enqueue(firstMoveDown, LavaGrid[1,0].Cost);
 
     var openList = new Dictionary<DirectionalNode, long>();
 
-    openList[startingPoint] = 0;
+    // openList[startingPoint] = 0;
+    openList[firstMoveRight] = LavaGrid[0,1].Cost;
+    openList[firstMoveDown] = LavaGrid[1,0].Cost;
 
     var closedList = new Dictionary<DirectionalNode, long>();
 
@@ -82,7 +91,7 @@ try
         
         openList.Remove(workingStep);
 
-        //Generate successors using links from the Lavagrid, but taking the current direction and step count into account
+        //Generate successors using links from the LavaGrid, but taking the current direction and step count into account
         var successors =
             LavaGrid[workingStep.Row, workingStep.Col].ValidLinks(workingStep.Direction, workingStep.StepCount)
                 .Select(nextNode =>
@@ -97,7 +106,8 @@ try
         {
             var successorCost = workingStepCost + LavaGrid[successor.Row, successor.Col].Cost;
 
-            if (successor.Row == Rows - 1 && successor.Col == Cols - 1)
+            //Part 1 had no min step count, part 2 has a 4 step min
+            if (successor.Row == Rows - 1 && successor.Col == Cols - 1 && successor.StepCount > 3)
             {
                 timer.Stop();
                 Console.WriteLine($"Found the goal with a score of {successorCost} in {timer.ElapsedMilliseconds} msec");
@@ -116,10 +126,9 @@ try
             }
         }
         closedList[workingStep] = workingStepCost;
-        // Console.WriteLine($"ClosedList has {closedList.Count} processed nodes. WorkingList has {queue.Count} nodes to process.");
-        
-
+        // Console.WriteLine($"ClosedList has {closedList.Count} processed nodes. WorkingList has {queue.Count} nodes to process.");    
     }
+    Console.WriteLine("Missed the exit");
 }
 catch (Exception e)
 {

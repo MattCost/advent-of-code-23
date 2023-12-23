@@ -30,11 +30,21 @@ public class Node
     public List<Edge> Links { get; set; } = new();
 
     public IEnumerable<Edge> ValidLinks(Direction directionOfTravel, int stepCount)
-    {
+    {        
+        //Not allowed to reverse
         var baseOutput = Links.Where(link => link.Direction != Inverse(directionOfTravel));
         
+        //Part  1
         //More than 3 steps, remove the direction of travel from the valid options
-        return (stepCount < 3) ?
+        // return (stepCount < 3) ?
+        //     baseOutput : 
+        //     baseOutput.Where(link => link.Direction != directionOfTravel);
+        
+        //Part 2 - we must take at least 4 steps
+        if( stepCount < 4) return baseOutput.Where(link => link.Direction == directionOfTravel);
+        
+        //But no more than 10
+        return (stepCount < 10) ?
             baseOutput : 
             baseOutput.Where(link => link.Direction != directionOfTravel);
     }

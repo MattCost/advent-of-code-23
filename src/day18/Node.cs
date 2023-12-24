@@ -43,4 +43,13 @@ public record Edge
     {
         return  row >= Math.Min(Start.Row, End.Row) && row <= Math.Max(Start.Row, End.Row);
     }
+
+    public bool Intersection(Edge other)
+    {
+        if(this.Start == other.Start) return true;
+        if(this.Start == other.End) return true;
+        if(this.End == other.Start) return true;
+        if(this.End == other.End) return true;
+        return false;
+    }
 }

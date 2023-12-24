@@ -1,11 +1,13 @@
 ﻿using System.Text;
 
 //62365 -input part 1
+//61257 
+
 Console.WriteLine("Hello, World!");
 
 string? line;
 int row = 1;
-int col=1;
+int col = 1;
 List<Node> Nodes = new()
 {
     new Node { Row = row, Col = col }
@@ -13,8 +15,8 @@ List<Node> Nodes = new()
 
 try
 {
-    // StreamReader sr = new StreamReader("sample.txt");
-    StreamReader sr = new StreamReader("input.txt");
+    StreamReader sr = new StreamReader("sample.txt");
+    // StreamReader sr = new StreamReader("input.txt");
 
     Console.WriteLine("starting processing");
 
@@ -30,7 +32,7 @@ try
             // var hex = split[2].Trim('(').Trim(')').Trim('#');
             // var directionCode = hex[5];
             // var difference = int.Parse(hex.Substring(0, 5), System.Globalization.NumberStyles.HexNumber);
-            
+
             // length += difference;
             // Console.WriteLine($"#{hex} = {directionCode} {difference}");
 
@@ -42,7 +44,7 @@ try
             // var nextRow = row + directionCode == '3' ? -difference : directionCode == '1' ? difference : 0;
             // var nextCol = col + directionCode == '2' ? -difference : directionCode == '0' ? difference : 0;
 
-            Nodes.Add( new Node{ Row = nextRow, Col = nextCol});
+            Nodes.Add(new Node { Row = nextRow, Col = nextCol });
 
             row = nextRow;
             col = nextCol;
@@ -53,11 +55,11 @@ try
     sr.Close();
 
     Console.WriteLine("Nodes");
-    Nodes.ForEach( node => Console.WriteLine(node));
+    Nodes.ForEach(node => Console.WriteLine(node));
 
 
     var volume = CalculateTrenchVolume(Nodes);
-    Console.WriteLine(new { length, volume});
+    Console.WriteLine(new { length, volume, total = length+volume });
 }
 catch (Exception e)
 {
@@ -66,108 +68,129 @@ catch (Exception e)
 
 long CalculateTrenchVolume(List<Node> nodes)
 {
-   
+
     var minRow = nodes.Select(node => node.Row).Min();
     var maxRow = nodes.Select(node => node.Row).Max();
     var minCol = nodes.Select(node => node.Row).Min();
     var maxCol = nodes.Select(node => node.Row).Max();
-    
-    Console.WriteLine( new { minRow, maxRow, minCol, maxCol});
+
+    Console.WriteLine(new { minRow, maxRow, minCol, maxCol });
     long volume = 0;
     List<Edge> edges = new();
-    for(int i=0; i<nodes.Count-1 ; i++)
+    for (int i = 0; i < nodes.Count - 1; i++)
     {
-        edges.Add( new Edge( nodes[i], nodes[i+1]));
+        edges.Add(new Edge(nodes[i], nodes[i + 1]));
     }
-    edges.ForEach(Console.WriteLine);
-    for(int row = minRow ; row <= maxRow ; row++)
+    // edges.ForEach(Console.WriteLine);
+    for (int row = minRow; row <= maxRow; row++)
     {
+        bool printLog = row==6;
+        long rowVolume = 0;
         bool isInside = false;
         bool onEdge = false;
         bool upperSet = false;
-        var activeEdges = edges.Where(edge => edge.ContainsRow(row)).ToArray();
+        var activeEdges = edges.Where(edge => edge.ContainsRow(row)).OrderBy( edge => Math.Min(edge.Start.Col, edge.End.Col)).ThenBy(edge => Math.Min(edge.Start.Row, edge.End.Row)).ThenBy(edge => !edge.IsVertical).ToArray();
 
         Console.WriteLine($"Row {row} Dealing with {activeEdges.Count()} edges");
+        activeEdges.ToList().ForEach(Console.WriteLine);
         var currentEdge = activeEdges[0];
-        for(int i=1 ; i<activeEdges.Length ; i++)
+        for (int i = 1; i < activeEdges.Length; i++)
         {
-
-            if(currentEdge.IsVertical && activeEdges[i].IsVertical)
+            if (printLog) Console.WriteLine($"{new{currentEdge}} - {new {activeEdge = activeEdges[i]}}");
+            if (!currentEdge.Intersection(activeEdges[i]))
             {
-                isInside = !isInside;
-                if(isInside && !onEdge)
+                if(printLog) Console.WriteLine("No Intersection");
+                if(onEdge)
                 {
-                    volume += Math.Abs(activeEdges[i].Start.Col - currentEdge.Start.Col) - 1;
-                }
-                currentEdge = activeEdges[i];
-                continue;
-
-            }
-            else
-            {
-                var horizontalEdge = currentEdge.IsHorizontal ? currentEdge : activeEdges[i];
-                var verticalEdge = currentEdge.IsVertical ? currentEdge : activeEdges[i];
-                var vertHighest = Math.Min(verticalEdge.Start.Row, verticalEdge.End.Row);
-                if(!onEdge)
-                {
-                    onEdge = true;
-                    if(vertHighest < horizontalEdge.Start.Row)
-                    {
-                        upperSet = true;
-                    }
-                    continue;
+                    if(printLog) Console.WriteLine("resetting onEdge");
+                    onEdge = false;
                 }
                 else
                 {
-                    onEdge = false;
-                    if( (vertHighest < horizontalEdge.Start.Row) != upperSet)
-                    {
-                        isInside = !isInside;
-                    }
-                    if(i<activeEdges.Length-1)
-                    {
-                        if(isInside)
-                        {
-                            volume += Math.Abs(verticalEdge.End.Col - activeEdges[i+1].Start.Col) ;
-                        }
-                    }
+                    if(printLog) Console.WriteLine("no onEdge, toggling isInside");
+                    isInside = !isInside;
+                }
+
+                if(isInside)
+                {
+                    var delta = Math.Abs(Math.Min(activeEdges[i].Start.Col, activeEdges[i].End.Col) - currentEdge.Start.Col) - 1;
+                    if(printLog) Console.WriteLine($"Adding delta {delta} to rowVolume");
+                    rowVolume += delta;
                 }
             }
+            else
+            {
+                if(printLog) Console.WriteLine("Dealing with intersection");
+                var horizontalEdge = currentEdge.IsHorizontal ? currentEdge : activeEdges[i];
+                var verticalEdge = currentEdge.IsVertical ? currentEdge : activeEdges[i];
+                // if(printLog) Console.WriteLine($"{ new { horizontalEdge, verticalEdge}}");
+
+                var vertHighest = Math.Min(verticalEdge.Start.Row, verticalEdge.End.Row);
+                if (!onEdge)
+                {
+                    if(printLog) Console.WriteLine("Setting on edge and saving upperSet");
+                    onEdge = true;
+                    if (vertHighest < horizontalEdge.Start.Row)
+                    {
+                        upperSet = true;
+                    }
+                }
+                else
+                {
+                    if(printLog) Console.WriteLine("Leaving edge. Checking upperSet");
+                    // onEdge = false;
+                    if ((vertHighest < horizontalEdge.Start.Row) != upperSet)
+                    {
+                        if(printLog) Console.WriteLine("toggling isInside");
+                        isInside = !isInside;
+                    }
+                    // if (i < activeEdges.Length - 1)
+                    // {
+                    //     if (isInside)
+                    //     {
+                    //         volume += Math.Abs(verticalEdge.End.Col - activeEdges[i + 1].Start.Col);
+                    //     }
+                    // }
+                }
+            }
+            currentEdge =activeEdges[i];
         }
+        Console.WriteLine(rowVolume);
+        volume += rowVolume;
     }
-/*
-#######
-#.....#
-###...#
-..#...#
-..#...#
-###.###
-#...#..
-##..###
-.#....#
-.######
+    /*
+    #######
+    #.....#
+    ###...#
+    ..#...#
+    ..#...#
+    ###.###
+    #...#..
+    ##..###
+    .#....#
+    .######
 
-proceess each row
-move across row to the right to the next intersection.
-if only 1 edge at this intersection 
-    toggle isInside
-    if(isInside) total += nextIntersection.Col - current.Col
-    continue;
-    
-if 2 edges at horizontal row 
-    if(! onEdge)
-        set onEdge
-        set isAbove if the vertical row is above the hoz row
-    else
-        reset onEdge
-        if iisAbove matches current isAbove - no change - outside row
-        else toggle isInside
-    end if
+    proceess each row
+    move across row to the right to the next intersection.
+    if only 1 edge at this intersection 
+        toggle isInside
+        if(isInside) total += nextIntersection.Col - current.Col
+        continue;
 
-
+    if 2 edges at horizontal row 
+        if(! onEdge)
+            set onEdge
+            set isAbove if the vertical row is above the hoz row
+        else
+            reset onEdge
+            if iisAbove matches current isAbove - no change - outside row
+            else toggle isInside
+        end if
 
 
-*/
+
+
+    */
 
     return volume;
 
@@ -177,7 +200,7 @@ if 2 edges at horizontal row
 // {
 //     // Console.WriteLine($"Entering PointInside Path Row {Py} Col {Px}");
 //     var count = 0;
-    
+
 //     for(int i=0 ; i<nodes.Count-1 ; i++)
 //     {
 //         //Edge goes from nodes[i] to nodes[j];

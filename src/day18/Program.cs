@@ -14,8 +14,8 @@ List<Node> Nodes = new()
 
 try
 {
-    StreamReader sr = new StreamReader("sample.txt");
-    // StreamReader sr = new StreamReader("input.txt");
+    // StreamReader sr = new StreamReader("sample.txt");
+    StreamReader sr = new StreamReader("input.txt");
 
     Console.WriteLine("starting processing");
 
@@ -29,15 +29,15 @@ try
 
             //Part 1
             // var difference = int.Parse(split[1]);
-            // var directionCode = split[0];
+            // var directionCode = split[0][0];
 
             //Part 2
             var hex = split[2].Trim('(').Trim(')').Trim('#');
             var directionCode = ParseDirection(hex[5]);
             var difference = int.Parse(hex.Substring(0, 5), System.Globalization.NumberStyles.HexNumber);
+            Console.WriteLine($"#{hex} = {directionCode} {difference}");
 
             length += difference;
-            Console.WriteLine($"#{hex} = {directionCode} {difference}");
 
             //Part 2
             var nextRow = row + (directionCode == 'U' ? -difference : directionCode == 'D' ? difference : 0);
@@ -80,6 +80,7 @@ char ParseDirection(char input)
 
 long CalculateTrenchVolume(List<Node> nodes)
 {
+    var timer = System.Diagnostics.Stopwatch.StartNew();
     var minRow = nodes.Select(node => node.Row).Min();
     var maxRow = nodes.Select(node => node.Row).Max();
     var minCol = nodes.Select(node => node.Col).Min();
@@ -135,17 +136,23 @@ long CalculateTrenchVolume(List<Node> nodes)
 
     // PrintMap(Map, rowCount, colCount);
 
+    Dictionary<Edge[], long> _cache = new(new MyEqualityComparer());
+
     for (int row = minRow; row <= maxRow; row++)
     {
-        bool printLog = true;//row == -189;//minRow + 19;
+        bool printLog = false;//row == -189;//minRow + 19;
         long rowVolume = 0;
         bool isInside = false;
-        bool onEdge = false;
-        bool upperSet = false;
         var activeEdges = edges.Where(edge => edge.ContainsRow(row)).OrderBy(edge => Math.Min(edge.Start.Col, edge.End.Col)).ThenBy(edge => Math.Min(edge.Start.Row, edge.End.Row)).ThenBy(edge => !edge.IsVertical).ToArray();
 
-        Console.WriteLine($"Row {row} Dealing with {activeEdges.Count()} edges");
-        activeEdges.ToList().ForEach(Console.WriteLine);
+        if(_cache.ContainsKey(activeEdges))
+        {
+            Console.WriteLine("cache hit");
+            volume += _cache[activeEdges];
+            continue;
+        }
+
+        if(printLog) Console.WriteLine($"Row {row} Dealing with {activeEdges.Count()} edges");
         var currentEdge = activeEdges[0];
         for (int i = 1; i < activeEdges.Length; i++)
         {
@@ -251,7 +258,8 @@ long CalculateTrenchVolume(List<Node> nodes)
             //     }
             // }
         }
-        Console.WriteLine(rowVolume);
+        if(printLog) Console.WriteLine(rowVolume);
+        _cache[activeEdges] = rowVolume;
         volume += rowVolume;
 
         // if (printLog)
@@ -259,6 +267,8 @@ long CalculateTrenchVolume(List<Node> nodes)
     }
     // PrintMap(Map, rowCount, colCount);
 
+    timer.Stop();
+    Console.WriteLine($"Volume Calc Elapsed msec {timer.ElapsedMilliseconds}");
     return volume;
 
 }

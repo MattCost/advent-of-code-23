@@ -1,7 +1,6 @@
 ﻿using System.Text;
 
 //62365 -input part 1
-//61257 
 
 Console.WriteLine("Hello, World!");
 
@@ -15,8 +14,8 @@ List<Node> Nodes = new()
 
 try
 {
-    // StreamReader sr = new StreamReader("sample.txt");
-    StreamReader sr = new StreamReader("input.txt");
+    StreamReader sr = new StreamReader("sample.txt");
+    // StreamReader sr = new StreamReader("input.txt");
 
     Console.WriteLine("starting processing");
 
@@ -28,21 +27,21 @@ try
         {
             var split = line.Split(' ');
 
-            //Part 2
-            // var hex = split[2].Trim('(').Trim(')').Trim('#');
-            // var directionCode = hex[5];
-            // var difference = int.Parse(hex.Substring(0, 5), System.Globalization.NumberStyles.HexNumber);
-
-            // length += difference;
-            // Console.WriteLine($"#{hex} = {directionCode} {difference}");
-
             //Part 1
-            var nextRow = row + (split[0] == "U" ? -int.Parse(split[1]) : split[0] == "D" ? int.Parse(split[1]) : 0);
-            var nextCol = col + (split[0] == "L" ? -int.Parse(split[1]) : split[0] == "R" ? int.Parse(split[1]) : 0);
-            length += int.Parse(split[1]);
+            // var difference = int.Parse(split[1]);
+            // var directionCode = split[0];
+
             //Part 2
-            // var nextRow = row + directionCode == '3' ? -difference : directionCode == '1' ? difference : 0;
-            // var nextCol = col + directionCode == '2' ? -difference : directionCode == '0' ? difference : 0;
+            var hex = split[2].Trim('(').Trim(')').Trim('#');
+            var directionCode = ParseDirection(hex[5]);
+            var difference = int.Parse(hex.Substring(0, 5), System.Globalization.NumberStyles.HexNumber);
+
+            length += difference;
+            Console.WriteLine($"#{hex} = {directionCode} {difference}");
+
+            //Part 2
+            var nextRow = row + (directionCode == 'U' ? -difference : directionCode == 'D' ? difference : 0);
+            var nextCol = col + (directionCode == 'L' ? -difference : directionCode == 'R' ? difference : 0);
 
             Nodes.Add(new Node { Row = nextRow, Col = nextCol });
 
@@ -54,8 +53,8 @@ try
     }
     sr.Close();
 
-    // Console.WriteLine("Nodes");
-    // Nodes.ForEach(node => Console.WriteLine(node));
+    Console.WriteLine("Nodes");
+    Nodes.ForEach(node => Console.WriteLine(node));
 
 
     var volume = CalculateTrenchVolume(Nodes);
@@ -65,6 +64,18 @@ try
 catch (Exception e)
 {
     Console.WriteLine("Exception: " + e);
+}
+
+char ParseDirection(char input)
+{
+    return input switch
+    {
+        '0' => 'R',
+        '1' => 'D',
+        '2' => 'L',
+        '3'=> 'U',
+        _ => throw new Exception("Invalid input")
+    };
 }
 
 long CalculateTrenchVolume(List<Node> nodes)
@@ -77,15 +88,15 @@ long CalculateTrenchVolume(List<Node> nodes)
     //draw map
     var rowCount = maxRow - minRow + 1;
     var colCount = maxCol - minCol + 1;
-    char[,] Map = new char[rowCount, colCount];
+    // char[,] Map = new char[rowCount, colCount];
 
-    for (row = 0; row < rowCount; row++)
-    {
-        for (col = 0; col < colCount; col++)
-        {
-            Map[row, col] = '.';
-        }
-    }
+    // for (row = 0; row < rowCount; row++)
+    // {
+    //     for (col = 0; col < colCount; col++)
+    //     {
+    //         Map[row, col] = '.';
+    //     }
+    // }
 
     Console.WriteLine(new { minRow, maxRow, minCol, maxCol });
 
@@ -100,27 +111,27 @@ long CalculateTrenchVolume(List<Node> nodes)
     // edges.ForEach(Console.WriteLine);
 
     //draw map
-    for (int i = 0; i < edges.Count; i++)
-    {
-        // Console.WriteLine(edges[i]);
-        if (edges[i].IsHorizontal)
-        {
-            var delta = edges[i].End.Col > edges[i].Start.Col ? 1 : -1;
-            for (int j = edges[i].Start.Col; j != edges[i].End.Col; j += delta)
-            {
-                // Console.WriteLine($"i {i} start {edges[i].Start.Row - minRow} col {j-minCol}");
-                Map[edges[i].Start.Row - minRow, j - minCol] = '#';
-            }
-        }
-        else
-        {
-            var delta = edges[i].End.Row > edges[i].Start.Row ? 1 : -1;
-            for (int j = edges[i].Start.Row; j != edges[i].End.Row; j += delta)
-            {
-                Map[j - minRow, edges[i].Start.Col - minCol] = '#';
-            }
-        }
-    }
+    // for (int i = 0; i < edges.Count; i++)
+    // {
+    //     // Console.WriteLine(edges[i]);
+    //     if (edges[i].IsHorizontal)
+    //     {
+    //         var delta = edges[i].End.Col > edges[i].Start.Col ? 1 : -1;
+    //         for (int j = edges[i].Start.Col; j != edges[i].End.Col; j += delta)
+    //         {
+    //             // Console.WriteLine($"i {i} start {edges[i].Start.Row - minRow} col {j-minCol}");
+    //             Map[edges[i].Start.Row - minRow, j - minCol] = '#';
+    //         }
+    //     }
+    //     else
+    //     {
+    //         var delta = edges[i].End.Row > edges[i].Start.Row ? 1 : -1;
+    //         for (int j = edges[i].Start.Row; j != edges[i].End.Row; j += delta)
+    //         {
+    //             Map[j - minRow, edges[i].Start.Col - minCol] = '#';
+    //         }
+    //     }
+    // }
 
     // PrintMap(Map, rowCount, colCount);
 
@@ -159,7 +170,7 @@ long CalculateTrenchVolume(List<Node> nodes)
 
                 if (isInside)
                 {
-                    FillMap(Map, row - minRow, currentEdge.Start.Col - minCol + 1, Math.Min(activeEdges[i].Start.Col, activeEdges[i].End.Col) - minCol);
+                    // FillMap(Map, row - minRow, currentEdge.Start.Col - minCol + 1, Math.Min(activeEdges[i].Start.Col, activeEdges[i].End.Col) - minCol);
 
                     var delta = Math.Abs(Math.Min(activeEdges[i].Start.Col, activeEdges[i].End.Col) - currentEdge.Start.Col) - 1;
                     if (printLog) Console.WriteLine($"Adding delta {delta} to rowVolume");
@@ -197,7 +208,7 @@ long CalculateTrenchVolume(List<Node> nodes)
                     {
                         var fourth = activeEdges[i + 2];
                         var delta = Math.Abs(third.Start.Col - Math.Min(fourth.Start.Col, fourth.End.Col)) - 1;
-                        FillMap(Map, row - minRow, third.Start.Col - minCol + 1, Math.Min(fourth.Start.Col, fourth.End.Col) - minCol);
+                        // FillMap(Map, row - minRow, third.Start.Col - minCol + 1, Math.Min(fourth.Start.Col, fourth.End.Col) - minCol);
                         if (printLog) Console.WriteLine($"Adding delta {delta} to rowVolume");
                         rowVolume += delta;
                     }
@@ -246,7 +257,7 @@ long CalculateTrenchVolume(List<Node> nodes)
         // if (printLog)
         //     PrintMap(Map, rowCount, colCount);
     }
-    PrintMap(Map, rowCount, colCount);
+    // PrintMap(Map, rowCount, colCount);
 
     return volume;
 
